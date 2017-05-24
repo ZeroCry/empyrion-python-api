@@ -1,0 +1,13 @@
+scriptManager:
+    databaseFile: epadata.sqlite
+    loaderScript: loader.py
+
+httpManager:
+    enabled: true
+    port: 36000
+    whitelist: true
+    authentication: true
+    addresses:
+      -  192.168.0.1
+    users:
+        admin: admin

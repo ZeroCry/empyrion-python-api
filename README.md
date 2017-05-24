@@ -1,4 +1,4 @@
-Python API for Empyrion
+Python API for Empyrion [![Build Status](https://travis-ci.org/huhlig/empyrion-python-api.svg?branch=master)](https://travis-ci.org/huhlig/empyrion-python-api)
 =======================
 
 The Empyrion Python API provides a python interface designed to

@@ -372,17 +372,20 @@ namespace Empyrion
 
         public void SendGlobalMessage(string message, byte prio = 2, float time = 10)
         {
-            _modGameApi.Game_Request(CmdId.Request_InGameMessage_AllPlayers, 0, new IdMsgPrio(0, message, prio, time));
+            // TODO: Fix this
+            SyncRequest<object>(CmdId.Request_InGameMessage_AllPlayers, CmdId.Event_Ok, new IdMsgPrio(0, message, prio, time));
         }
 
         public void SendFactionMessage(int factionId, string message, byte prio = 2, float time = 10)
         {
-            _modGameApi.Game_Request(CmdId.Request_InGameMessage_Faction, 0, new IdMsgPrio(factionId, message, prio, time));
+            // TODO: Fix this
+            SyncRequest<object>(CmdId.Request_InGameMessage_Faction, CmdId.Event_Ok, new IdMsgPrio(factionId, message, prio, time));
         }
 
         public void SendPrivateMessage(int entityId, string message, byte prio = 2, float time = 10)
         {
-            _modGameApi.Game_Request(CmdId.Request_InGameMessage_SinglePlayer, 0, new IdMsgPrio(entityId, message, prio, time));
+            // TODO: Fix this
+            SyncRequest<object>(CmdId.Request_InGameMessage_SinglePlayer, CmdId.Event_Ok, new IdMsgPrio(entityId, message, prio, time));
         }
 
         public void RegisterCallback(string name, TriggeredCallback callback)

@@ -10,7 +10,7 @@
 		{
 			"name": "http://localhost:36000/script/trigger/playfield",
 			"request": {
-				"url": "http://localhost:36000/script/trigger/reloadPlayfield",
+				"url": "http://localhost:36000/script/trigger/playfield?playfield=akua",
 				"method": "GET",
 				"header": [],
 				"body": {},

@@ -147,6 +147,12 @@ namespace Empyrion
                 _handles.Remove(handle._sequenceNumber);
             }
 
+            if (handle._resCmdId == CmdId.Event_Error)
+            {
+                ErrorInfo errorInfo = (ErrorInfo)handle._responseData;
+                throw new Exception("Error Invoking Game Request: " + Enum.GetName(typeof(ErrorType), errorInfo.errorType));
+            }
+
             if (handle._resCmdId != resCmdId)
             {
                 throw new Exception("Expected CmdId: " + Enum.GetName(typeof(CmdId), resCmdId)
@@ -188,7 +194,39 @@ namespace Empyrion
                 handle._sequenceNumber = _sequenceNumber;
                 _handles.Add(_sequenceNumber, handle);
             }
-            _modGameApi.Game_Request(reqCmdId, handle._sequenceNumber, data);
+
+            ThreadPool.QueueUserWorkItem(o =>
+            {
+                try
+                {
+                    lock (handle)
+                    {
+                        _modGameApi.Game_Request(reqCmdId, handle._sequenceNumber, data);
+                        Monitor.Wait(handle);
+                    }
+
+                    lock (_handles)
+                    {
+                        _handles.Remove(handle._sequenceNumber);
+                    }
+
+                    if (handle._resCmdId == CmdId.Event_Error)
+                    {
+                        ErrorInfo errorInfo = (ErrorInfo)handle._responseData;
+                        throw new Exception("Error Invoking Game Request: " + Enum.GetName(typeof(ErrorType), errorInfo.errorType));
+                    }
+
+                    if (handle._resCmdId != resCmdId)
+                    {
+                        throw new Exception("Expected CmdId: " + Enum.GetName(typeof(CmdId), resCmdId)
+                            + " Found CmdId: " + Enum.GetName(typeof(CmdId), handle._resCmdId));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogMessage("Error Making Asyncronous Game_Request: " + ex);
+                }
+            });
         }
 
         public bool ExecuteScript(string script)
@@ -223,7 +261,17 @@ namespace Empyrion
             TriggeredCallback callback;
             if (_triggeredCallbacks.ContainsKey(trigger) && (callback = _triggeredCallbacks[trigger]) != null)
             {
-                callback.Invoke(parameters);
+                ThreadPool.QueueUserWorkItem(o =>
+                {
+                    try
+                    {
+                        callback.Invoke(parameters);
+                    }
+                    catch (Exception ex)
+                    {
+                        LogMessage("Error Calling TriggeredCallback[" + trigger + "]: " + ex);
+                    }
+                });
                 return true;
             }
             else

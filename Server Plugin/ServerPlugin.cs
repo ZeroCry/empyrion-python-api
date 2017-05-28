@@ -108,6 +108,9 @@ namespace Empyrion
                 case CmdId.Event_Player_Info:
                     _scriptManager.ProcessResponseData(eventId, seqNr, data);
                     break;
+                case CmdId.Event_Error:
+                    _scriptManager.ProcessResponseData(eventId, seqNr, (ErrorInfo)data);
+                    break;
                 default:
                     LogMessage("Plugin",
                          "Unhandled Event - CmdId '" + Enum.GetName(typeof(CmdId), eventId) + "' " +

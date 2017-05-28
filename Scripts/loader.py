@@ -32,7 +32,7 @@ def privateChatMessage(senderInfo, receiverInfo, message):
 
 def playerConnected(playerInfo):
     empyrion.LogMessage("Player Connected to " + playerInfo.playfield + ": (" + str(playerInfo.entityId) + ") " + playerInfo.playerName )
-    time.wait(20) # Long enough for them to actually connect
+    time.sleep(20) # Long enough for them to actually connect
     empyrion.SendGlobalMessage("Hello " + senderInfo.playerName)
 
 def playerDisconnected(playerInfo):
@@ -46,7 +46,7 @@ def playfieldUnloaded(playfieldLoad):
 
 def reloadPlayfield(parameters):
     empyrion.LogMessage("Attempting playfield reload")
-    empyrion.ExecuteConsoleCommand("playfield")
+    empyrion.ExecuteConsoleCommand("playfield " + parameters['playfield'])
 
 empyrion.LogMessage("Hi from IronPython 'loader.py' Script")
 empyrion.RegisterCallback(empyrion.HeartbeatCallback(heartbeat))

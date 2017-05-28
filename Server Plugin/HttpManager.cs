@@ -16,6 +16,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 
@@ -72,13 +73,14 @@ namespace Empyrion
                 });
                 _httpRouter.DefineRoute("/script/trigger/:trigger", (req, res, parameters) =>
                 {
+                    string trigger = parameters["trigger"];
                     IDictionary<string, string> queryParams = new Dictionary<string, string>();
                     foreach (var k in req.QueryString.AllKeys)
                     {
                         queryParams.Add(k, req.QueryString[k]);
                     }
-                    LogMessage("Triggering Function " + parameters["trigger"]);
-                    if (_scriptManager.ExecuteTrigger(parameters["trigger"], queryParams))
+                    LogMessage("Triggering Function '" + trigger + "' with " + ToString(queryParams));
+                    if (_scriptManager.ExecuteTrigger(trigger, queryParams))
                     {
                         res.StatusCode = 200;
                         res.StatusDescription = "OK";
@@ -101,7 +103,7 @@ namespace Empyrion
                 {
                     while (_httplistener.IsListening)
                     {
-                        HttpListenerContext ctx = _httplistener.GetContext();                        
+                        HttpListenerContext ctx = _httplistener.GetContext();
                         ThreadPool.QueueUserWorkItem((_) =>
                         {
                             string ipAddress = ctx.Request.RemoteEndPoint.Address.ToString();
@@ -169,6 +171,19 @@ namespace Empyrion
         public void LogMessage(string message)
         {
             _serverPlugin.LogMessage("Http", message);
+        }
+
+        private string ToString(IDictionary<string, string> dictionary)
+        {
+            var str = new StringBuilder();
+            str.Append("{ ");
+            foreach (var pair in dictionary)
+            {
+                str.Append(String.Format("'{0}' = '{1}', ", pair.Key, pair.Value));
+            }
+            str.Length = str.Length - 2;
+            str.Append(" }");
+            return str.ToString();
         }
     }
 

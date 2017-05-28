@@ -5,9 +5,9 @@ scriptManager:
 httpManager:
     enabled: true
     port: 36000
-    whitelist: true
-    authentication: true
+    whitelist: false
+    authentication: false
     addresses:
-      -  192.168.0.1
+      -  127.0.0.1
     users:
         admin: admin

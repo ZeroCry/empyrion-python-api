@@ -31,7 +31,7 @@ namespace Empyrion
         public Dictionary<string, string> users { get; set; }
     }
     public class HttpManager
-    {        
+    {
         private readonly HttpManagerConfiguration _config;
         private readonly ScriptManager _scriptManager;
         private readonly ServerPlugin _serverPlugin;
@@ -48,7 +48,14 @@ namespace Empyrion
                 _httpRouter = new UriRouter();
                 _httplistener = new HttpListener();
                 _httplistener.Prefixes.Add("http://*:" + _config.port + "/");
-                _httplistener.AuthenticationSchemes = AuthenticationSchemes.Basic;
+                if (_config.authentication)
+                {
+                    _httplistener.AuthenticationSchemes = AuthenticationSchemes.Basic;
+                }
+                else
+                {
+                    _httplistener.AuthenticationSchemes = AuthenticationSchemes.None;
+                }
                 _httpRouter.DefineRoute("/script/execute/:script", (req, res, parameters) =>
                 {
                     LogMessage("Running Script " + parameters["script"]);
@@ -87,61 +94,71 @@ namespace Empyrion
 
         public void StartServer()
         {
-            _httplistener.Start();
-            new Thread(() =>
+            if (_config.enabled)
             {
-                while (_httplistener.IsListening)
+                _httplistener.Start();
+                new Thread(() =>
                 {
-                    HttpListenerContext ctx = _httplistener.GetContext();
-                    ThreadPool.QueueUserWorkItem((_) =>
+                    while (_httplistener.IsListening)
                     {
-                        string ipAddress = ctx.Request.RemoteEndPoint.ToString();
-                        string requestPath = ctx.Request.Url.AbsolutePath;
-                        if (_config.whitelist)
+                        HttpListenerContext ctx = _httplistener.GetContext();                        
+                        ThreadPool.QueueUserWorkItem((_) =>
                         {
-                            if (!_config.addresses.Contains(ipAddress))
+                            string ipAddress = ctx.Request.RemoteEndPoint.Address.ToString();
+                            string requestPath = ctx.Request.Url.AbsolutePath;
+                            if (_config.whitelist)
                             {
-                                LogMessage("Connection Refused from " + ipAddress + " to " + ctx.Request.Url.AbsolutePath);
-                                return;
-                            }
-                        }
-                        string username = "unknown";
-                        if (_config.authentication)
-                        {
-                            if (ctx.User.Identity.IsAuthenticated)
-                            {
-                                HttpListenerBasicIdentity identity = (HttpListenerBasicIdentity)ctx.User.Identity;
-                                username = identity.Name;
-                                if (!_config.users.ContainsKey(username))
+                                if (!_config.addresses.Contains(ipAddress))
                                 {
-                                    LogMessage("Connection Refused from " + ipAddress + " to " + requestPath
-                                        + " for user " + username + ". User not found.");
+                                    LogMessage("Connection Refused from " + ipAddress + " to " + ctx.Request.Url.AbsolutePath);
                                     return;
                                 }
-                                if (!_config.users[identity.Name].Equals(identity.Password))
+                            }
+                            string username = "unknown";
+                            if (_config.authentication)
+                            {
+                                if (ctx.User.Identity.IsAuthenticated)
                                 {
-                                    LogMessage("Connection Refused from " + ipAddress + " to " + requestPath
-                                        + " for user " + username + ". Incorrect Password.");
+                                    HttpListenerBasicIdentity identity = (HttpListenerBasicIdentity)ctx.User.Identity;
+                                    username = identity.Name;
+                                    if (!_config.users.ContainsKey(username))
+                                    {
+                                        LogMessage("Connection Refused from " + ipAddress + " to " + requestPath
+                                            + " for user " + username + ". User not found.");
+                                        return;
+                                    }
+                                    if (!_config.users[identity.Name].Equals(identity.Password))
+                                    {
+                                        LogMessage("Connection Refused from " + ipAddress + " to " + requestPath
+                                            + " for user " + username + ". Incorrect Password.");
+                                        return;
+                                    }
+
+                                }
+                                else
+                                {
+                                    LogMessage("Connection Refused from " + ipAddress + " to " + requestPath + " due to lack of credentials.");
                                     return;
                                 }
-
                             }
-                            else
-                            {
-                                LogMessage("Connection Refused from " + ipAddress + " to " + requestPath + " due to lack of credentials.");
-                                return;
-                            }
-                        }
 
-                        LogMessage("Connection Accepted from " + ipAddress + " to " + requestPath + " for user " + username + ".");
+                            LogMessage("Connection Accepted from " + ipAddress + " to " + requestPath + " for user " + username + ".");
 
-                        _httpRouter.Route(ctx.Request.Url.AbsolutePath.Trim().ToLower(), ctx.Request, ctx.Response);
+                            _httpRouter.Route(ctx.Request.Url.AbsolutePath.Trim().ToLower(), ctx.Request, ctx.Response);
 
-                        ctx.Response.Close();
-                    });
+                            ctx.Response.Close();
+                        });
+                    }
+                }).Start();
+                if (_httplistener.IsListening)
+                {
+                    LogMessage("Started REST Server on Port " + _config.port);
                 }
-            }).Start();
-            LogMessage("Started REST Server on Port " + _config.port);
+                else
+                {
+                    LogMessage("REST Server Disabled");
+                }
+            }
         }
 
         public void StopServer()

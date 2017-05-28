@@ -1,0 +1,33 @@
+{
+	"variables": [],
+	"info": {
+		"name": "EmpyrionPythonAPI",
+		"_postman_id": "e9117278-6d39-e2a5-89aa-42d09b4e42e7",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "http://localhost:36000/script/trigger/playfield",
+			"request": {
+				"url": "http://localhost:36000/script/trigger/reloadPlayfield",
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "http://localhost:36000/script/execute/loader.py",
+			"request": {
+				"url": "http://localhost:36000/script/execute/loader.py",
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"description": ""
+			},
+			"response": []
+		}
+	]
+}

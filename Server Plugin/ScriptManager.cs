@@ -155,6 +155,42 @@ namespace Empyrion
             return (T)handle._responseData;
         }
 
+        private void AsyncRequest(CmdId reqCmdId, CmdId resCmdId, object data)
+        {
+            Handle handle = new Handle();
+            lock (_handles)
+            {
+                bool passedZero = false;
+                do
+                {
+                    if (_sequenceNumber == 0)
+                    {
+                        // Sequence Number 0 is reserved for Game Events
+                        _sequenceNumber = 1;
+                        // This avoids the rare scenario that we have somehow 
+                        // simultainiously used up all 65534 available sequence
+                        // numbers. If we pass Zero twice insize a lock.. fsck it.
+                        if (passedZero)
+                        {
+                            throw new Exception("Ran out of Available Sequence Numbers");
+                        }
+                        else
+                        {
+                            passedZero = true;
+                        }
+                    }
+                    else
+                    {
+                        // Increment until we find an unused SequenceNumber
+                        _sequenceNumber += 1;
+                    }
+                } while (_handles.ContainsKey(_sequenceNumber));
+                handle._sequenceNumber = _sequenceNumber;
+                _handles.Add(_sequenceNumber, handle);
+            }
+            _modGameApi.Game_Request(reqCmdId, handle._sequenceNumber, data);
+        }
+
         public bool ExecuteScript(string script)
         {
             try
@@ -313,7 +349,7 @@ namespace Empyrion
                 try
                 {
                     PlayerInfo senderInfo = GetUpdatedPlayerInfo(senderEntityId);
-                    FactionInfo factionInfo = GetFactionInfo(factionId);
+                    FactionInfo factionInfo = new FactionInfo(); // GetFactionInfo(factionId); // TODO: Fix Faction fetching
                     LogMessage("{Faction} " + senderInfo.playerName + " -> " + factionId + ": " + message);
                     _factionChatMessageCallback?.Invoke(senderInfo, factionInfo, message);
                 }
@@ -372,25 +408,31 @@ namespace Empyrion
 
         public void SendGlobalMessage(string message, byte prio = 2, float time = 10)
         {
-            // TODO: Fix this
-            SyncRequest<object>(CmdId.Request_InGameMessage_AllPlayers, CmdId.Event_Ok, new IdMsgPrio(0, message, prio, time));
+            LogMessage("Sent Global Message: " + message);
+            AsyncRequest(CmdId.Request_InGameMessage_AllPlayers, CmdId.Event_Ok, new IdMsgPrio(0, message, prio, time));
         }
 
         public void SendFactionMessage(int factionId, string message, byte prio = 2, float time = 10)
         {
-            // TODO: Fix this
-            SyncRequest<object>(CmdId.Request_InGameMessage_Faction, CmdId.Event_Ok, new IdMsgPrio(factionId, message, prio, time));
+            LogMessage("Sent Faction Message to (" + factionId + "): " + message);
+            AsyncRequest(CmdId.Request_InGameMessage_Faction, CmdId.Event_Ok, new IdMsgPrio(factionId, message, prio, time));
         }
 
         public void SendPrivateMessage(int entityId, string message, byte prio = 2, float time = 10)
         {
-            // TODO: Fix this
-            SyncRequest<object>(CmdId.Request_InGameMessage_SinglePlayer, CmdId.Event_Ok, new IdMsgPrio(entityId, message, prio, time));
+            LogMessage("Sent Private Message to (" + entityId + "): " + message);
+            AsyncRequest(CmdId.Request_InGameMessage_SinglePlayer, CmdId.Event_Ok, new IdMsgPrio(entityId, message, prio, time));
+        }
+
+        public void ExecuteConsoleCommand(string command)
+        {
+            LogMessage("Executing Console Command: " + command);
+            AsyncRequest(CmdId.Request_ConsoleCommand, CmdId.Event_Ok, command);
         }
 
         public void RegisterCallback(string name, TriggeredCallback callback)
         {
-            _triggeredCallbacks[name] = callback;
+            _triggeredCallbacks[name.ToLower()] = callback;
         }
 
         public void RegisterCallback(HeartbeatCallback callback)

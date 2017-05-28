@@ -98,6 +98,11 @@ namespace Empyrion
             return _scriptManager.GetFactionInfo(factionId);
         }
 
+        public void ExecuteConsoleCommand(string command)
+        {
+            _scriptManager.ExecuteConsoleCommand(command);
+        }
+
         public void SendGlobalMessage(string message)
         {
             _scriptManager.SendGlobalMessage(message);

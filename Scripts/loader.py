@@ -33,7 +33,7 @@ def privateChatMessage(senderInfo, receiverInfo, message):
 def playerConnected(playerInfo):
     empyrion.LogMessage("Player Connected to " + playerInfo.playfield + ": (" + str(playerInfo.entityId) + ") " + playerInfo.playerName )
     time.sleep(20) # Long enough for them to actually connect
-    empyrion.SendGlobalMessage("Hello " + senderInfo.playerName)
+    empyrion.SendGlobalMessage("Hello " + playerInfo.playerName)
 
 def playerDisconnected(playerInfo):
     empyrion.LogMessage("Player Disconnected from " + playerInfo.playfield + ": (" + str(playerInfo.entityId) + ")" + playerInfo.playerName )
